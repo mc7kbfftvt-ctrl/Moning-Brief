@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>证券事务管理简报</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body>
+  <div id="app">
+    <h1>证券事务管理</h1>
+    <p>{{ date }} {{ weekday }}</p>
+
+    <div v-for="section in sections" :key="section.title">
+      <h2>{{ section.title }}</h2>
+
+      <div v-for="sub in section.subsections" :key="sub.title">
+        <h3>{{ sub.title }}</h3>
+        <p v-if="sub.range">统计范围：{{ sub.range }}</p>
+
+        <ul v-if="sub.items">
+          <li v-for="item in sub.items" :key="item">{{ item }}</li>
+        </ul>
+
+        <table v-if="sub.table">
+          <thead>
+            <tr>
+              <th v-for="col in sub.table.columns" :key="col">{{ col }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="(row, i) in sub.table.rows" :key="i">
+              <td v-for="(cell, j) in row" :key="j">{{ cell }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    fetch('data.json')
+      .then(res => res.json())
+      .then(data => {
+        Vue.createApp({
+          data() {
+            return data;
+          }
+        }).mount('#app');
+      });
+  </script>
+</body>
+</html>
