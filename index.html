@@ -2,40 +2,73 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>证券事务管理简报</title>
   <link rel="stylesheet" href="style.css">
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
 </head>
 <body>
   <div id="app">
-    <h1>证券事务管理</h1>
-    <p>{{ date }} {{ weekday }}</p>
+    <header>
+      <h1>{{ title }}</h1>
+      <p class="meta">{{ date }} {{ weekday }}</p>
+    </header>
 
-    <div v-for="section in sections" :key="section.title">
+    <section v-for="(section, i) in sections" :key="i" class="section">
       <h2>{{ section.title }}</h2>
 
-      <div v-for="sub in section.subsections" :key="sub.title">
-        <h3>{{ sub.title }}</h3>
-        <p v-if="sub.range">统计范围：{{ sub.range }}</p>
+      <div v-for="(sub, j) in section.subsections" :key="j" class="subsection">
+        <h3 v-if="sub.title">{{ sub.title }}</h3>
+        <p v-if="sub.range" class="range">统计范围：{{ sub.range }}</p>
 
-        <ul v-if="sub.items">
-          <li v-for="item in sub.items" :key="item">{{ item }}</li>
+        <!-- 列表 -->
+        <ul v-if="sub.type === 'list'">
+          <li v-for="(item, k) in sub.items" :key="k">{{ item }}</li>
         </ul>
 
-        <table v-if="sub.table">
+        <!-- 表格 -->
+        <table v-else-if="sub.type === 'table'">
           <thead>
             <tr>
-              <th v-for="col in sub.table.columns" :key="col">{{ col }}</th>
+              <th v-for="(col, k) in sub.columns" :key="k">{{ col }}</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(row, i) in sub.table.rows" :key="i">
-              <td v-for="(cell, j) in row" :key="j">{{ cell }}</td>
+            <tr v-for="(row, k) in sub.rows" :key="k">
+              <td v-for="(cell, l) in row" :key="l">{{ cell }}</td>
             </tr>
           </tbody>
         </table>
+
+        <!-- 段落 -->
+        <p v-else-if="sub.type === 'text'" class="text">{{ sub.text }}</p>
+
+        <!-- 引用 -->
+        <blockquote v-else-if="sub.type === 'quote'" class="quote">
+          {{ sub.text }}
+        </blockquote>
+
+        <!-- 标签 -->
+        <div v-else-if="sub.type === 'tags'" class="tags">
+          <span v-for="(tag, k) in sub.tags" :key="k" class="tag">{{ tag }}</span>
+        </div>
+
+        <!-- 图片 -->
+        <figure v-else-if="sub.type === 'image'" class="image">
+          <img :src="sub.src" :alt="sub.alt || ''">
+          <figcaption v-if="sub.caption">{{ sub.caption }}</figcaption>
+        </figure>
+
+        <!-- 兜底：如果没写 type 但是有 items，按列表渲染 -->
+        <ul v-else-if="sub.items">
+          <li v-for="(item, k) in sub.items" :key="k">{{ item }}</li>
+        </ul>
       </div>
-    </div>
+    </section>
+
+    <footer>
+      <p>{{ disclaimer }}</p>
+    </footer>
   </div>
 
   <script>
@@ -44,9 +77,19 @@
       .then(data => {
         Vue.createApp({
           data() {
-            return data;
+            return {
+              title: data.title || '证券事务管理',
+              date: data.date || '',
+              weekday: data.weekday || '',
+              sections: data.sections || [],
+              disclaimer: data.disclaimer || '以上内容仅供参考，不构成投资建议。'
+            };
           }
         }).mount('#app');
+      })
+      .catch(err => {
+        document.getElementById('app').innerHTML =
+          '<p style="color:red">数据加载失败，请检查 data.json 格式：' + err.message + '</p>';
       });
   </script>
 </body>
